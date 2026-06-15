@@ -18,11 +18,23 @@ type CinematicJourneyProps = {
   chapters: JourneyChapter[]
 }
 
-function VideoLayer({ src, title }: { src: string; title: string }) {
+function VideoLayer({
+  src,
+  title,
+  autoPlay = false,
+  preload = 'metadata',
+  onVideo,
+}: {
+  src: string
+  title: string
+  autoPlay?: boolean
+  preload?: 'none' | 'metadata' | 'auto'
+  onVideo?: (node: HTMLVideoElement | null) => void
+}) {
   return (
     <div className="video-shell" aria-hidden="true">
       <div className="video-fallback" />
-      <video className="video-media" autoPlay muted playsInline loop preload="metadata">
+      <video className="video-media" autoPlay={autoPlay} muted playsInline loop preload={preload} ref={onVideo}>
         <source src={src} type="video/mp4" />
         {title}
       </video>
@@ -36,6 +48,8 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
   const progressRef = useRef<HTMLSpanElement | null>(null)
   const videoRefs = useRef<Array<HTMLDivElement | null>>([])
   const textureRefs = useRef<Array<HTMLDivElement | null>>([])
+  const videoElementRefs = useRef<Array<HTMLVideoElement | null>>([])
+  const textureElementRefs = useRef<Array<HTMLVideoElement | null>>([])
   const copyRefs = useRef<Array<HTMLElement | null>>([])
   const actRefs = useRef<Array<HTMLSpanElement | null>>([])
 
@@ -59,11 +73,36 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
         acts.forEach((act, index) => {
           act.classList.toggle('is-active', index === activeIndex)
         })
+
+        videoElementRefs.current.forEach((video, index) => {
+          if (!video) {
+            return
+          }
+
+          const shouldPlay = Math.abs(index - activeIndex) <= 1
+          if (shouldPlay) {
+            void video.play().catch(() => undefined)
+          } else {
+            video.pause()
+          }
+        })
+
+        textureElementRefs.current.forEach((video, index) => {
+          if (!video) {
+            return
+          }
+
+          if (index === activeIndex && chapters[index]?.transition !== 'shutter') {
+            void video.play().catch(() => undefined)
+          } else {
+            video.pause()
+          }
+        })
       }
 
-      gsap.set(videos, { opacity: 0, scale: 1.18, filter: 'brightness(0.48) contrast(1.12) saturate(0.7)' })
-      gsap.set(textures, { opacity: 0, scale: 1.1, filter: 'brightness(0.86) contrast(1.3) saturate(0.6)' })
-      gsap.set(copies, { opacity: 0, y: 90, filter: 'blur(18px)' })
+      gsap.set(videos, { opacity: 0, scale: 1.12, xPercent: 0, yPercent: 0, clipPath: 'inset(0% 0% 0% 0%)' })
+      gsap.set(textures, { opacity: 0, scale: 1.04 })
+      gsap.set(copies, { opacity: 0, y: 72, filter: 'blur(10px)' })
       gsap.set(progressRef.current, { scaleX: 0.08, transformOrigin: 'left center' })
       gsap.set(videos[0], { opacity: 1, scale: 1.02 })
       gsap.set(copies[0], { opacity: 1, y: 0, filter: 'blur(0px)' })
@@ -84,7 +123,6 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
 
       const revealVideo = (index: number, label: string) => {
         const chapter = chapters[index]
-        const isFinal = index === chapters.length - 1
 
         if (chapter.transition === 'split') {
           gsap.set(videos[index], { xPercent: 10, clipPath: 'inset(0 50% 0 50%)' })
@@ -93,7 +131,6 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
             xPercent: 0,
             clipPath: 'inset(0 0% 0 0%)',
             scale: 1.02,
-            filter: 'brightness(0.62) contrast(1.18) saturate(0.95)',
             duration: 0.78,
           }, label)
           timeline.to(textures[index], { opacity: 0.34, scale: 1, duration: 0.18, yoyo: true, repeat: 1 }, label)
@@ -107,7 +144,6 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
             yPercent: 0,
             clipPath: 'inset(0% 0 0 0)',
             scale: 1.04,
-            filter: 'brightness(0.56) contrast(1.28) saturate(0.78)',
             duration: 0.86,
           }, label)
           timeline.fromTo('.scene-curtain', { scaleY: 0 }, { scaleY: 1, duration: 0.16, yoyo: true, repeat: 1 }, label)
@@ -121,7 +157,6 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
             rotate: 0,
             clipPath: 'circle(145% at 50% 50%)',
             scale: 1,
-            filter: 'brightness(0.58) contrast(1.25) saturate(0.82)',
             duration: 0.9,
           }, label)
           timeline.to('.scene-iris-ring', { scale: 1.25, opacity: 0.44, duration: 0.24, yoyo: true, repeat: 1 }, label)
@@ -129,12 +164,11 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
         }
 
         if (chapter.transition === 'exposure') {
-          gsap.set(videos[index], { scale: 1.22, filter: 'brightness(0.42) contrast(1.5) saturate(0.7)' })
+          gsap.set(videos[index], { scale: 1.18 })
           timeline.to(textures[index], { opacity: 0.64, scale: 1, duration: 0.38 }, label)
           timeline.to(videos[index], {
             opacity: 1,
             scale: 1.02,
-            filter: isFinal ? 'brightness(0.78) contrast(1.08) saturate(1.08)' : 'brightness(0.58) contrast(1.2) saturate(0.9)',
             duration: 0.86,
           }, `${label}+=0.08`)
           timeline.to(textures[index], { opacity: 0, scale: 1.08, duration: 0.44 }, `${label}+=0.42`)
@@ -146,7 +180,6 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
           {
             opacity: 1,
             scale: index % 2 === 0 ? 1.03 : 1,
-            filter: isFinal ? 'brightness(0.74) contrast(1.12) saturate(1)' : 'brightness(0.58) contrast(1.2) saturate(0.86)',
             duration: 0.65,
           },
           label,
@@ -181,8 +214,8 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
 
         if (index > 0) {
           const exitDirection = index % 2 === 0 ? -8 : 8
-          timeline.to(videos[index - 1], { opacity: 0, scale: 1.14, xPercent: exitDirection, duration: 0.5 }, label)
-          timeline.to(copies[index - 1], { opacity: 0, y: -90, filter: 'blur(18px)', duration: 0.38 }, label)
+          timeline.to(videos[index - 1], { opacity: 0, scale: 1.1, xPercent: exitDirection, duration: 0.5 }, label)
+          timeline.to(copies[index - 1], { opacity: 0, y: -72, filter: 'blur(10px)', duration: 0.38 }, label)
         }
 
         timeline.to(
@@ -215,7 +248,15 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
                 videoRefs.current[index] = node
               }}
             >
-              <VideoLayer src={chapter.video} title={chapter.title} />
+              <VideoLayer
+                src={chapter.video}
+                title={chapter.title}
+                autoPlay={index === 0}
+                preload={index <= 1 ? 'metadata' : 'none'}
+                onVideo={(node) => {
+                  videoElementRefs.current[index] = node
+                }}
+              />
             </div>
           ))}
           <div className="cinema-vignette" />
@@ -229,7 +270,14 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
                 textureRefs.current[index] = node
               }}
             >
-              <VideoLayer src={chapter.textureVideo} title={`${chapter.title} texture`} />
+              <VideoLayer
+                src={chapter.textureVideo}
+                title={`${chapter.title} texture`}
+                preload="none"
+                onVideo={(node) => {
+                  textureElementRefs.current[index] = node
+                }}
+              />
             </div>
           ))}
           <div className="scene-title-ghost">PromptForge Cinematic</div>
@@ -288,7 +336,7 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
       <div className="sequence-mobile" aria-label="Parcours cinematographique mobile">
         {chapters.map((chapter) => (
           <article className="sequence-mobile-card" key={`mobile-${chapter.id}`}>
-            <VideoLayer src={chapter.video} title={chapter.title} />
+            <VideoLayer src={chapter.video} title={chapter.title} preload="metadata" />
             <div className="cinema-vignette" />
             <div className="letterbox" />
             <div className="film-grain" />

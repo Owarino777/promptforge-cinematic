@@ -137,6 +137,8 @@ video {
   height: 100%;
   object-fit: cover;
   object-position: center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .cinema-vignette {
@@ -151,7 +153,7 @@ video {
 .film-grain {
   z-index: 4;
   pointer-events: none;
-  opacity: 0.13;
+  opacity: 0.1;
   mix-blend-mode: screen;
   background-image:
     radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.9) 0.55px, transparent 0.75px),
@@ -294,6 +296,7 @@ video {
 .sequence-stage {
   position: absolute;
   inset: 0;
+  contain: layout paint style;
 }
 
 .sequence-video-layer {
@@ -301,7 +304,8 @@ video {
   inset: 0;
   opacity: 0;
   transform: scale(1.12);
-  will-change: opacity, transform, clip-path, filter;
+  backface-visibility: hidden;
+  will-change: opacity, transform, clip-path;
 }
 
 .sequence-video-layer.is-active {
@@ -329,14 +333,13 @@ video {
   inset: 0;
   z-index: 4;
   opacity: 0;
-  mix-blend-mode: screen;
   pointer-events: none;
   transform: scale(1.08);
   will-change: opacity, transform;
 }
 
 .sequence-texture-layer .video-media {
-  filter: grayscale(0.2) contrast(1.32) brightness(0.78);
+  opacity: 0.72;
 }
 
 .scene-shutter {
@@ -374,9 +377,7 @@ video {
   border-radius: 50%;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.3);
-  box-shadow:
-    0 0 0 18vw rgba(1, 1, 1, 0.38),
-    inset 0 0 70px rgba(217, 162, 74, 0.18);
+  box-shadow: 0 0 0 18vw rgba(1, 1, 1, 0.34);
   pointer-events: none;
 }
 
@@ -444,6 +445,17 @@ video {
   gap: clamp(0.8rem, 1.8vw, 1.2rem);
   max-width: 60rem;
   opacity: 0;
+  pointer-events: none;
+  text-shadow: 0 8px 38px rgba(0, 0, 0, 0.78);
+}
+
+.sequence-copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1.4rem auto -1.2rem -1.4rem;
+  width: min(54rem, 94vw);
+  background: linear-gradient(90deg, rgba(1, 1, 1, 0.64), rgba(1, 1, 1, 0));
   pointer-events: none;
 }
 

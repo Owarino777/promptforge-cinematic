@@ -9,6 +9,9 @@ import './index.css'
 type VideoBackgroundProps = {
   src: string
   title: string
+  autoPlay?: boolean
+  preload?: 'none' | 'metadata' | 'auto'
+  onVideo?: (node: HTMLVideoElement | null) => void
 }
 
 const VIDEOS = {
@@ -86,11 +89,11 @@ const journeyChapters: JourneyChapter[] = [
   },
 ]
 
-function VideoBackground({ src, title }: VideoBackgroundProps) {
+function VideoBackground({ src, title, autoPlay = true, preload = 'metadata', onVideo }: VideoBackgroundProps) {
   return (
     <div className="video-shell" aria-hidden="true">
       <div className="video-fallback" />
-      <video className="video-media" autoPlay muted playsInline loop preload="metadata">
+      <video className="video-media" autoPlay={autoPlay} muted playsInline loop preload={preload} ref={onVideo}>
         <source src={src} type="video/mp4" />
         {title}
       </video>
@@ -101,6 +104,8 @@ function VideoBackground({ src, title }: VideoBackgroundProps) {
 function App() {
   const appRef = useRef<HTMLDivElement | null>(null)
   const lenisRafRef = useRef<((time: number) => void) | null>(null)
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
+  const finalVideoRef = useRef<HTMLVideoElement | null>(null)
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -131,8 +136,8 @@ function App() {
       })
 
       gsap.to('.hero-panel .video-media', {
-        scale: 1.12,
-        yPercent: 5,
+        scale: 1.08,
+        yPercent: 3,
         ease: 'none',
         scrollTrigger: {
           trigger: '.hero-panel',
@@ -140,6 +145,26 @@ function App() {
           end: 'bottom top',
           scrub: true,
         },
+      })
+
+      ScrollTrigger.create({
+        trigger: '.hero-panel',
+        start: 'top bottom',
+        end: 'bottom top',
+        onEnter: () => void heroVideoRef.current?.play().catch(() => undefined),
+        onEnterBack: () => void heroVideoRef.current?.play().catch(() => undefined),
+        onLeave: () => heroVideoRef.current?.pause(),
+        onLeaveBack: () => heroVideoRef.current?.pause(),
+      })
+
+      ScrollTrigger.create({
+        trigger: '.final-panel',
+        start: 'top bottom',
+        end: 'bottom top',
+        onEnter: () => void finalVideoRef.current?.play().catch(() => undefined),
+        onEnterBack: () => void finalVideoRef.current?.play().catch(() => undefined),
+        onLeave: () => finalVideoRef.current?.pause(),
+        onLeaveBack: () => finalVideoRef.current?.pause(),
       })
     }, appRef)
 
@@ -166,7 +191,13 @@ function App() {
 
       <main>
         <section className="hero-panel" aria-label="Hero PromptForge Cinematic">
-          <VideoBackground src={VIDEOS.hero} title="Video d introduction PromptForge" />
+          <VideoBackground
+            src={VIDEOS.hero}
+            title="Video d introduction PromptForge"
+            onVideo={(node) => {
+              heroVideoRef.current = node
+            }}
+          />
           <div className="cinema-vignette" />
           <div className="letterbox" aria-hidden="true" />
           <div className="film-grain" />
@@ -198,7 +229,15 @@ function App() {
         <CinematicJourney chapters={journeyChapters} />
 
         <section className="final-panel" id="final-cta" aria-label="Ouverture du studio">
-          <VideoBackground src={VIDEOS.final} title="Video finale PromptForge" />
+          <VideoBackground
+            src={VIDEOS.final}
+            title="Video finale PromptForge"
+            autoPlay={false}
+            preload="none"
+            onVideo={(node) => {
+              finalVideoRef.current = node
+            }}
+          />
           <div className="cinema-vignette" />
           <div className="letterbox" aria-hidden="true" />
           <div className="film-grain" />
