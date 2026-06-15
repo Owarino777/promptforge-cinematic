@@ -1,121 +1,222 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useRef } from 'react'
+import { ArrowUpRight, Play } from 'lucide-react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Lenis from 'lenis'
+import CinematicJourney, { type JourneyChapter } from './components/CinematicJourney'
+import './index.css'
+
+type VideoBackgroundProps = {
+  src: string
+  title: string
+}
+
+const VIDEOS = {
+  hero: 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_031045_0e1165dd-ab48-46e3-ad3d-5fe77f217647.mp4',
+  chapterOne:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_171521_25968ba2-b594-4b32-aab7-f6b69398a6fa.mp4',
+  chapterTwo:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260503_101827_abebfeec-f243-466b-b494-7f6814c0fbbf.mp4',
+  chapterThree:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_182501_0216c2be-1b2f-40d3-8716-0d4f42e73b44.mp4',
+  chapterFour:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_115139_0fc6bd3d-3631-4d26-ab9b-28293887dcc9.mp4',
+  chapterFive:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260424_064411_9e9d7f84-9277-41f4-ab10-59172d89e6be.mp4',
+  textureOne:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260422_191657_800d4e1f-7ab3-41af-90b6-9bd3039eb294.mp4',
+  textureTwo:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_182501_0216c2be-1b2f-40d3-8716-0d4f42e73b44.mp4',
+  textureThree:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260422_112520_ee819691-f2e8-4c54-bb77-3fb72c84eaa5.mp4',
+  final:
+    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4',
+} as const
+
+const journeyChapters: JourneyChapter[] = [
+  {
+    id: 'origin',
+    act: 'I',
+    label: 'Origine',
+    title: 'Une idee surgit.',
+    line: 'Pas encore un site. Pas encore un prompt. Juste une tension visuelle qui demande une forme.',
+    video: VIDEOS.chapterOne,
+    transition: 'shutter',
+    textureVideo: VIDEOS.textureOne,
+  },
+  {
+    id: 'cut',
+    act: 'II',
+    label: 'Coupe',
+    title: 'On retire le decor.',
+    line: 'Tout ce qui ressemble a une landing page disparait: grilles sages, cartes molles, fausse profondeur.',
+    video: VIDEOS.chapterTwo,
+    transition: 'shutter',
+    textureVideo: VIDEOS.textureTwo,
+  },
+  {
+    id: 'world',
+    act: 'III',
+    label: 'Monde',
+    title: 'La scene prend le dessus.',
+    line: 'Le media devient l interface. Le scroll ne visite plus des blocs: il traverse une sequence.',
+    video: VIDEOS.chapterThree,
+    transition: 'split',
+    textureVideo: VIDEOS.textureThree,
+  },
+  {
+    id: 'codex',
+    act: 'IV',
+    label: 'Codex',
+    title: 'La vision devient executable.',
+    line: 'Chaque choix est converti en contrainte claire: rythme, contraste, hierarchie, mouvement, sortie production.',
+    video: VIDEOS.chapterFour,
+    transition: 'curtain',
+    textureVideo: VIDEOS.textureOne,
+  },
+  {
+    id: 'release',
+    act: 'V',
+    label: 'Sortie',
+    title: 'Le trailer devient site.',
+    line: 'Une experience premium, pilotable, responsive, et assez forte pour ne pas avoir besoin de se justifier.',
+    video: VIDEOS.chapterFive,
+    transition: 'iris',
+    textureVideo: VIDEOS.textureThree,
+  },
+]
+
+function VideoBackground({ src, title }: VideoBackgroundProps) {
+  return (
+    <div className="video-shell" aria-hidden="true">
+      <div className="video-fallback" />
+      <video className="video-media" autoPlay muted playsInline loop preload="metadata">
+        <source src={src} type="video/mp4" />
+        {title}
+      </video>
+    </div>
+  )
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const appRef = useRef<HTMLDivElement | null>(null)
+  const lenisRafRef = useRef<((time: number) => void) | null>(null)
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+
+    const lenis = new Lenis({
+      lerp: 0.08,
+      wheelMultiplier: 0.82,
+      touchMultiplier: 1.05,
+    })
+
+    const lenisRaf = (time: number) => {
+      lenis.raf(time * 1000)
+    }
+
+    lenisRafRef.current = lenisRaf
+    lenis.on('scroll', ScrollTrigger.update)
+    gsap.ticker.add(lenisRaf)
+    gsap.ticker.lagSmoothing(0)
+
+    const context = gsap.context(() => {
+      gsap.from('.hero-kicker, .hero-title, .hero-description, .hero-actions', {
+        y: 70,
+        opacity: 0,
+        filter: 'blur(18px)',
+        duration: 1.35,
+        stagger: 0.12,
+        ease: 'expo.out',
+      })
+
+      gsap.to('.hero-panel .video-media', {
+        scale: 1.12,
+        yPercent: 5,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.hero-panel',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      })
+    }, appRef)
+
+    return () => {
+      context.revert()
+      if (lenisRafRef.current) {
+        gsap.ticker.remove(lenisRafRef.current)
+      }
+      lenis.destroy()
+    }
+  }, [])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell" id="top" ref={appRef}>
+      <header className="topbar" aria-label="Navigation principale">
+        <a className="topbar-brand" href="#top">
+          <span>PromptForge</span>
+          <span>Cinematic</span>
+        </a>
+        <a className="topbar-link" href="#sequence">
+          Voir le film
+        </a>
+      </header>
 
-      <div className="ticks"></div>
+      <main>
+        <section className="hero-panel" aria-label="Hero PromptForge Cinematic">
+          <VideoBackground src={VIDEOS.hero} title="Video d introduction PromptForge" />
+          <div className="cinema-vignette" />
+          <div className="letterbox" aria-hidden="true" />
+          <div className="film-grain" />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
+          <div className="hero-layout">
+            <p className="hero-kicker">Un prompt ne suffit plus.</p>
+            <h1 className="hero-title">
+              Fabrique
+              <br />
+              la scene.
+            </h1>
+            <p className="hero-description">
+              Une experience scroll-driven en francais, construite comme une bande-annonce:
+              plans reels, ruptures, tension, puis prompt Codex pret a produire.
+            </p>
+            <div className="hero-actions">
+              <a className="primary-action" href="#sequence">
+                Lancer la sequence
+                <Play size={17} aria-hidden="true" />
               </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
+              <a className="secondary-action" href="#final-cta">
+                Aller a la sortie
+                <ArrowUpRight size={17} aria-hidden="true" />
               </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <CinematicJourney chapters={journeyChapters} />
+
+        <section className="final-panel" id="final-cta" aria-label="Ouverture du studio">
+          <VideoBackground src={VIDEOS.final} title="Video finale PromptForge" />
+          <div className="cinema-vignette" />
+          <div className="letterbox" aria-hidden="true" />
+          <div className="film-grain" />
+          <div className="final-layout">
+            <p className="hero-kicker">Fin du film. Debut du build.</p>
+            <h2>
+              Maintenant,
+              <br />
+              on forge.
+            </h2>
+            <a className="primary-action" href="#top">
+              Rejouer l experience
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Références vidéo</title>
+    <style>
+      html, body {
+        margin: 0;
+        background: #000;
+        min-height: 100%;
+        color: #fff;
+        font-family: Segoe UI, sans-serif;
+      }
+
+      body {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      figure {
+        margin: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      figcaption {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.72);
+      }
+
+      video {
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        display: block;
+        background: #000;
+      }
+
+      @media (max-width: 1100px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <figure>
+        <figcaption>Référence 01</figcaption>
+        <video src="/reference-hero-1.mp4" controls autoplay muted playsinline></video>
+      </figure>
+      <figure>
+        <figcaption>Référence 02</figcaption>
+        <video src="/reference-hero-2.mp4" controls autoplay muted playsinline></video>
+      </figure>
+      <figure>
+        <figcaption>Référence 03</figcaption>
+        <video src="/reference-hero-3.mp4" controls autoplay muted playsinline></video>
+      </figure>
+    </div>
+  </body>
+</html>
