@@ -1,409 +1,578 @@
-import { useEffect, useRef } from 'react'
-import { ArrowUpRight, Play } from 'lucide-react'
+import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import CinematicJourney, { type JourneyChapter } from './components/CinematicJourney'
+import 'lenis/dist/lenis.css'
+import backgroundBlueClouds from './assets/scene/background-blue-clouds.png'
+import backgroundVioletClouds from './assets/scene/background-violet-clouds.png'
+import backgroundWarmClouds from './assets/scene/background-warm-clouds.png'
+import hudBlue from './assets/scene/hud-blue.png'
+import hudGreen from './assets/scene/hud-green.png'
+import hudViolet from './assets/scene/hud-violet.png'
+import lightStreaksViolet from './assets/scene/light-streaks-violet.png'
+import objectAmberStack from './assets/scene/object-amber-stack.png'
+import objectBlueStack from './assets/scene/object-blue-stack.png'
+import objectOrb from './assets/scene/object-orb.png'
+import objectRing from './assets/scene/object-ring.png'
+import objectVioletStack from './assets/scene/object-violet-stack.png'
+import wireframeViolet from './assets/scene/wireframe-violet.png'
 import './index.css'
 
-type VideoBackgroundProps = {
-  src: string
-  title: string
-  autoPlay?: boolean
-  preload?: 'none' | 'metadata' | 'auto'
-  onVideo?: (node: HTMLVideoElement | null) => void
+type SmoothScrollContextValue = {
+  scrollTo: (target: string, offset?: number) => void
 }
 
-const VIDEOS = {
-  hero: 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260506_031045_0e1165dd-ab48-46e3-ad3d-5fe77f217647.mp4',
-  chapterOne:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_171521_25968ba2-b594-4b32-aab7-f6b69398a6fa.mp4',
-  chapterTwo:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260503_101827_abebfeec-f243-466b-b494-7f6814c0fbbf.mp4',
-  chapterThree:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_182501_0216c2be-1b2f-40d3-8716-0d4f42e73b44.mp4',
-  chapterFour:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_115139_0fc6bd3d-3631-4d26-ab9b-28293887dcc9.mp4',
-  chapterFive:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260424_064411_9e9d7f84-9277-41f4-ab10-59172d89e6be.mp4',
-  textureOne:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260422_191657_800d4e1f-7ab3-41af-90b6-9bd3039eb294.mp4',
-  textureTwo:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260429_182501_0216c2be-1b2f-40d3-8716-0d4f42e73b44.mp4',
-  textureThree:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260422_112520_ee819691-f2e8-4c54-bb77-3fb72c84eaa5.mp4',
-  final:
-    'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_161253_c72b1869-400f-45ed-ac0c-52f68c2ed5bd.mp4',
+type SmoothScrollProviderProps = {
+  children: ReactNode
+}
+
+type SceneCard = {
+  eyebrow: string
+  title: string
+  body: string
+}
+
+const MotionContext = createContext<SmoothScrollContextValue | null>(null)
+
+const SCENE_ASSETS = {
+  objectViolet: objectVioletStack,
+  objectBlue: objectBlueStack,
+  objectAmber: objectAmberStack,
+  objectRing,
+  objectOrb,
+  backgroundViolet: backgroundVioletClouds,
+  backgroundBlue: backgroundBlueClouds,
+  backgroundWarm: backgroundWarmClouds,
+  wireframeViolet,
+  hudViolet,
+  hudBlue,
+  hudGreen,
+  lightStreaksViolet,
 } as const
 
-const journeyChapters: JourneyChapter[] = [
+const sceneCards: SceneCard[] = [
   {
-    id: 'origin',
-    act: 'I',
-    label: 'Origine',
-    title: 'Une idee surgit.',
-    line: 'Pas encore un site. Pas encore un prompt. Juste une tension visuelle qui demande une forme.',
-    video: VIDEOS.chapterOne,
-    transition: 'shutter',
-    textureVideo: VIDEOS.textureOne,
+    eyebrow: '01 / Signal',
+    title: 'Visual Core',
+    body: 'Objet signature, lumiere, rythme et profondeur orchestras dans une seule scene.',
   },
   {
-    id: 'cut',
-    act: 'II',
-    label: 'Coupe',
-    title: 'On retire le decor.',
-    line: 'Tout ce qui ressemble a une landing page disparait: grilles sages, cartes molles, fausse profondeur.',
-    video: VIDEOS.chapterTwo,
-    transition: 'shutter',
-    textureVideo: VIDEOS.textureTwo,
+    eyebrow: '02 / System',
+    title: 'Live Panels',
+    body: 'Les couches HUD deviennent un cockpit visuel, pas de simples cartes posees.',
   },
   {
-    id: 'world',
-    act: 'III',
-    label: 'Monde',
-    title: 'La scene prend le dessus.',
-    line: 'Le media devient l interface. Le scroll ne visite plus des blocs: il traverse une sequence.',
-    video: VIDEOS.chapterThree,
-    transition: 'split',
-    textureVideo: VIDEOS.textureThree,
-  },
-  {
-    id: 'codex',
-    act: 'IV',
-    label: 'Codex',
-    title: 'La vision devient executable.',
-    line: 'Chaque choix est converti en contrainte claire: rythme, contraste, hierarchie, mouvement, sortie production.',
-    video: VIDEOS.chapterFour,
-    transition: 'curtain',
-    textureVideo: VIDEOS.textureOne,
-  },
-  {
-    id: 'release',
-    act: 'V',
-    label: 'Sortie',
-    title: 'Le trailer devient site.',
-    line: 'Une experience premium, pilotable, responsive, et assez forte pour ne pas avoir besoin de se justifier.',
-    video: VIDEOS.chapterFive,
-    transition: 'iris',
-    textureVideo: VIDEOS.textureThree,
+    eyebrow: '03 / Motion',
+    title: 'Scroll Path',
+    body: 'La camera traverse le decor avec une progression lisible de 0 a 100%.',
   },
 ]
 
-function VideoBackground({ src, title, autoPlay = true, preload = 'metadata', onVideo }: VideoBackgroundProps) {
-  return (
-    <div className="video-shell" aria-hidden="true">
-      <div className="video-fallback" />
-      <video className="video-media" autoPlay={autoPlay} muted playsInline loop preload={preload} ref={onVideo}>
-        <source src={src} type="video/mp4" />
-        {title}
-      </video>
-    </div>
-  )
+function useSmoothScroll() {
+  const context = useContext(MotionContext)
+
+  if (!context) {
+    throw new Error('useSmoothScroll must be used inside SmoothScrollProvider')
+  }
+
+  return context
 }
 
-function App() {
-  const appRef = useRef<HTMLDivElement | null>(null)
+function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   const lenisRef = useRef<Lenis | null>(null)
-  const lenisRafRef = useRef<((time: number) => void) | null>(null)
-  const heroVideoRef = useRef<HTMLVideoElement | null>(null)
-  const finalVideoRef = useRef<HTMLVideoElement | null>(null)
-
-  const scrollToTarget = (target: string, offset = 0) => {
-    lenisRef.current?.scrollTo(target, {
-      offset,
-      duration: 1.15,
-      easing: (progress: number) => 1 - Math.pow(1 - progress, 3),
-    })
-  }
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const lenis = new Lenis({
-      lerp: 0.08,
-      wheelMultiplier: 0.82,
+      anchors: true,
+      lerp: prefersReducedMotion ? 1 : 0.08,
+      smoothWheel: !prefersReducedMotion,
       touchMultiplier: 1.05,
+      wheelMultiplier: 0.86,
     })
 
     lenisRef.current = lenis
 
-    const lenisRaf = (time: number) => {
+    const updateLenis = (time: number) => {
       lenis.raf(time * 1000)
     }
 
-    lenisRafRef.current = lenisRaf
     lenis.on('scroll', ScrollTrigger.update)
-    gsap.ticker.add(lenisRaf)
+    gsap.ticker.add(updateLenis)
     gsap.ticker.lagSmoothing(0)
 
-    const context = gsap.context(() => {
-      gsap.from('.hero-kicker, .hero-title, .hero-description, .hero-actions', {
-        y: 70,
-        opacity: 0,
-        filter: 'blur(18px)',
-        duration: 1.35,
-        stagger: 0.12,
-        ease: 'expo.out',
-      })
-
-      gsap.to('.hero-panel .video-media', {
-        scale: 1.08,
-        yPercent: 3,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.hero-panel',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: true,
-        },
-      })
-
-      ScrollTrigger.create({
-        trigger: '.hero-panel',
-        start: 'top bottom',
-        end: 'bottom top',
-        onEnter: () => void heroVideoRef.current?.play().catch(() => undefined),
-        onEnterBack: () => void heroVideoRef.current?.play().catch(() => undefined),
-        onLeave: () => heroVideoRef.current?.pause(),
-        onLeaveBack: () => heroVideoRef.current?.pause(),
-      })
-
-      ScrollTrigger.create({
-        trigger: '.final-panel',
-        start: 'top 120%',
-        end: 'bottom top',
-        onEnter: () => void finalVideoRef.current?.play().catch(() => undefined),
-        onEnterBack: () => void finalVideoRef.current?.play().catch(() => undefined),
-        onLeave: () => finalVideoRef.current?.pause(),
-        onLeaveBack: () => finalVideoRef.current?.pause(),
-      })
-
-      gsap.fromTo(
-        '.forge-bridge-title span',
-        { yPercent: 115, opacity: 0 },
-        {
-          yPercent: 0,
-          opacity: 1,
-          duration: 0.95,
-          stagger: 0.08,
-          ease: 'expo.out',
-          scrollTrigger: {
-            trigger: '.forge-bridge',
-            start: 'top 68%',
-            toggleActions: 'play none none reverse',
-          },
-        },
-      )
-
-      gsap.fromTo(
-        '.forge-step',
-        { x: -44, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.72,
-          stagger: 0.1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.forge-bridge',
-            start: 'top 46%',
-            toggleActions: 'play none none reverse',
-          },
-        },
-      )
-
-      gsap.to('.forge-meter-fill', {
-        scaleX: 1,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.forge-bridge',
-          start: 'top 72%',
-          end: 'bottom 38%',
-          scrub: true,
-        },
-      })
-
-      gsap.to('.forge-bridge .video-media', {
-        scale: 1.1,
-        yPercent: 4,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.forge-bridge',
-          start: 'top bottom',
-          end: 'bottom top',
-          scrub: true,
-        },
-      })
-    }, appRef)
-
     return () => {
-      context.revert()
-      if (lenisRafRef.current) {
-        gsap.ticker.remove(lenisRafRef.current)
-      }
+      gsap.ticker.remove(updateLenis)
       lenis.destroy()
       lenisRef.current = null
     }
   }, [])
 
+  const value = useMemo<SmoothScrollContextValue>(
+    () => ({
+      scrollTo: (target: string, offset = 0) => {
+        lenisRef.current?.scrollTo(target, {
+          duration: 1.05,
+          easing: (progress: number) => 1 - Math.pow(1 - progress, 3),
+          offset,
+        })
+      },
+    }),
+    [],
+  )
+
+  return <MotionContext.Provider value={value}>{children}</MotionContext.Provider>
+}
+
+function TopBar() {
+  const { scrollTo } = useSmoothScroll()
+
   return (
-    <div className="app-shell" id="top" ref={appRef}>
-      <header className="topbar" aria-label="Navigation principale">
-        <a className="topbar-brand" href="#top">
-          <span>PromptForge</span>
-          <span>Cinematic</span>
+    <header className="topbar" aria-label="Navigation principale">
+      <a
+        className="topbar-brand"
+        href="#top"
+        onClick={(event) => {
+          event.preventDefault()
+          scrollTo('#top')
+        }}
+      >
+        <span>PromptForge</span>
+        <span>Cinematic</span>
+      </a>
+      <a
+        className="topbar-link"
+        href="#motion-scene"
+        onClick={(event) => {
+          event.preventDefault()
+          scrollTo('#motion-scene')
+        }}
+      >
+        Entrer dans le systeme
+      </a>
+    </header>
+  )
+}
+
+function HeroScene() {
+  const sceneRef = useRef<HTMLElement | null>(null)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+
+    const scene = sceneRef.current
+    const viewport = viewportRef.current
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (!scene || !viewport) {
+      return
+    }
+
+    const ctx = gsap.context(() => {
+      const alwaysVisible =
+        '.scene-bg-violet, .scene-bg-blue, .scene-bg-warm, .scene-wireframe-asset, .scene-light-streaks, .signature-object-violet, .signature-object-blue, .signature-object-amber, .signature-ring, .signature-orb, .hud-panel-violet, .hud-panel-blue, .hud-panel-green, .scene-card, .scene-cta'
+
+      if (prefersReducedMotion) {
+        gsap.set(alwaysVisible, { clearProps: 'clipPath,filter,opacity,transform,visibility' })
+        gsap.set('.scene-card, .scene-cta, .hud-system, .signature-ring, .signature-orb', { autoAlpha: 1 })
+        return
+      }
+
+      const timeline = gsap.timeline({
+        defaults: { ease: 'power2.inOut' },
+        scrollTrigger: {
+          trigger: scene,
+          start: 'top top',
+          end: () => '+=' + Math.max(scene.offsetHeight - window.innerHeight, window.innerHeight),
+          pin: viewport,
+          pinSpacing: false,
+          scrub: 0.75,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      })
+
+      timeline
+        .addLabel('intro', 0)
+        .fromTo(
+          '.scene-bg-violet',
+          { opacity: 0.9, scale: 1.12, xPercent: 0, yPercent: -2 },
+          { opacity: 1, scale: 1.06, xPercent: -1.4, yPercent: 1.2, duration: 0.95 },
+          'intro',
+        )
+        .fromTo(
+          '.signature-object-violet',
+          { opacity: 0.96, rotateX: 0, rotateY: -3, rotateZ: -2.5, scale: 0.82, xPercent: 0, yPercent: 3 },
+          { opacity: 1, rotateX: 0, rotateY: 4, rotateZ: 1.5, scale: 0.94, xPercent: 1.6, yPercent: -1.4, duration: 0.95 },
+          'intro',
+        )
+        .fromTo(
+          '.scene-headline',
+          { clipPath: 'inset(0% 0% 0% 0%)', yPercent: 0, scale: 1 },
+          { clipPath: 'inset(0% 0% 0% 0%)', yPercent: -1.4, scale: 1.015, duration: 0.95 },
+          'intro',
+        )
+        .fromTo(
+          '.signature-light-sweep',
+          { autoAlpha: 0, xPercent: -112 },
+          { autoAlpha: 0.95, xPercent: 118, duration: 0.72, ease: 'power3.inOut' },
+          'intro+=0.14',
+        )
+        .fromTo(
+          '.scene-wireframe-asset',
+          { autoAlpha: 0.08, scale: 1.1, xPercent: -2, yPercent: 1.5 },
+          { autoAlpha: 0.34, scale: 1.02, xPercent: 1.5, yPercent: -1.5, duration: 0.9 },
+          'intro+=0.12',
+        )
+        .addLabel('objectAwake', 0.95)
+        .to(
+          '.signature-object-violet',
+          {
+            duration: 1,
+            filter:
+              'drop-shadow(0 0 54px rgba(195, 71, 255, 0.88)) drop-shadow(0 34px 88px rgba(71, 132, 255, 0.42))',
+            rotateY: 8,
+            rotateZ: 4,
+            scale: 1.16,
+            xPercent: 4,
+            yPercent: -5,
+          },
+          'objectAwake',
+        )
+        .to(
+          '.signature-halo',
+          { opacity: 1, scale: 1.22, duration: 1 },
+          'objectAwake',
+        )
+        .to(
+          '.scene-light-streaks',
+          { autoAlpha: 0.74, xPercent: -7, yPercent: 4, scale: 1.08, duration: 1 },
+          'objectAwake',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.24, duration: 1 },
+          'objectAwake',
+        )
+        .addLabel('cameraDive', 1.95)
+        .to(
+          '.scene-title-mask',
+          {
+            clipPath: 'inset(0% 0% 100% 0%)',
+            duration: 0.82,
+            ease: 'power3.inOut',
+            yPercent: -28,
+          },
+          'cameraDive',
+        )
+        .to(
+          '.scene-subtitle',
+          {
+            autoAlpha: 0,
+            clipPath: 'inset(0% 0% 100% 0%)',
+            duration: 0.64,
+            ease: 'power3.inOut',
+            yPercent: -22,
+          },
+          'cameraDive+=0.06',
+        )
+        .to(
+          '.scene-kicker',
+          { autoAlpha: 0.34, yPercent: -12, duration: 0.5 },
+          'cameraDive+=0.12',
+        )
+        .to(
+          '.signature-system',
+          { rotateX: 12, rotateY: -11, rotateZ: 12, scale: 1.1, xPercent: 14, yPercent: 9, duration: 1.12 },
+          'cameraDive-=0.06',
+        )
+        .to(
+          '.scene-wireframe-asset',
+          { autoAlpha: 0.72, scale: 1.18, xPercent: -5, yPercent: -6, duration: 1.1 },
+          'cameraDive',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.38, duration: 1.05 },
+          'cameraDive',
+        )
+        .addLabel('blueprintMode', 3.05)
+        .to(
+          '.signature-object-violet',
+          {
+            autoAlpha: 0.38,
+            duration: 0.92,
+            filter: 'drop-shadow(0 0 26px rgba(118, 82, 255, 0.42)) saturate(0.58) brightness(0.72)',
+            scale: 1.02,
+          },
+          'blueprintMode',
+        )
+        .to(
+          '.scene-wireframe-asset',
+          { autoAlpha: 0.96, filter: 'saturate(1.35) contrast(1.24) brightness(1.06)', scale: 1.28, duration: 0.92 },
+          'blueprintMode-=0.05',
+        )
+        .to(
+          '.scene-chapter-indicator span',
+          { textShadow: '0 0 24px rgba(125, 240, 255, 0.9)', color: '#7df0ff', duration: 0.5 },
+          'blueprintMode',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.52, duration: 0.86 },
+          'blueprintMode',
+        )
+        .addLabel('systemPanels', 4)
+        .fromTo(
+          '.hud-system',
+          { autoAlpha: 0, rotateX: 24, rotateY: -16, rotateZ: -4, scale: 0.9, xPercent: 8, yPercent: 10 },
+          { autoAlpha: 1, rotateX: 9, rotateY: -8, rotateZ: 0, scale: 1, xPercent: 0, yPercent: 0, duration: 0.75 },
+          'systemPanels',
+        )
+        .fromTo(
+          '.hud-panel',
+          { autoAlpha: 0, filter: 'blur(16px)', rotateY: -18, scale: 0.88, xPercent: 42, yPercent: 14, z: -220 },
+          {
+            autoAlpha: 0.92,
+            duration: 0.8,
+            ease: 'power3.out',
+            filter: 'blur(0px)',
+            rotateY: 0,
+            scale: 1,
+            stagger: 0.12,
+            xPercent: 0,
+            yPercent: 0,
+            z: 0,
+          },
+          'systemPanels+=0.05',
+        )
+        .fromTo(
+          '.scene-card',
+          { autoAlpha: 0, filter: 'blur(12px)', rotateY: -12, scale: 0.9, xPercent: 26, yPercent: 18, z: -160 },
+          {
+            autoAlpha: 1,
+            duration: 0.7,
+            ease: 'power3.out',
+            filter: 'blur(0px)',
+            rotateY: 0,
+            scale: 1,
+            stagger: 0.08,
+            xPercent: 0,
+            yPercent: 0,
+            z: 0,
+          },
+          'systemPanels+=0.28',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.65, duration: 0.8 },
+          'systemPanels',
+        )
+        .addLabel('colorShift', 5)
+        .to(
+          '.scene-bg-blue',
+          { autoAlpha: 0.82, scale: 1.03, xPercent: -2, yPercent: 0, duration: 0.8 },
+          'colorShift',
+        )
+        .to(
+          '.signature-object-blue',
+          {
+            autoAlpha: 0.82,
+            duration: 0.78,
+            filter: 'drop-shadow(0 0 48px rgba(86, 183, 255, 0.78)) drop-shadow(0 30px 92px rgba(125, 240, 255, 0.32))',
+            rotateZ: -3,
+            scale: 1.03,
+          },
+          'colorShift+=0.02',
+        )
+        .to(
+          '.signature-object-violet',
+          { autoAlpha: 0.22, duration: 0.72 },
+          'colorShift+=0.1',
+        )
+        .to(
+          '.hud-system',
+          { xPercent: -4, yPercent: -5, rotateY: 8, scale: 1.03, duration: 0.88 },
+          'colorShift',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.78, duration: 0.8 },
+          'colorShift',
+        )
+        .addLabel('orbReveal', 6)
+        .to(
+          '.scene-bg-warm',
+          { autoAlpha: 0.42, scale: 1.04, xPercent: 1.5, yPercent: -1, duration: 0.72 },
+          'orbReveal-=0.14',
+        )
+        .fromTo(
+          '.signature-ring',
+          { autoAlpha: 0, rotateX: 62, rotateZ: -22, scale: 0.48, xPercent: -22, yPercent: 28, z: 220 },
+          { autoAlpha: 0.96, rotateX: 58, rotateZ: 12, scale: 0.9, xPercent: -7, yPercent: 8, z: 0, duration: 0.88 },
+          'orbReveal',
+        )
+        .fromTo(
+          '.signature-orb',
+          { autoAlpha: 0, filter: 'blur(12px) brightness(1.2)', scale: 0.38, xPercent: 22, yPercent: 18 },
+          { autoAlpha: 0.92, filter: 'blur(0px) brightness(1.12)', scale: 0.72, xPercent: 9, yPercent: -2, duration: 0.82 },
+          'orbReveal+=0.08',
+        )
+        .to(
+          '.signature-object-amber',
+          { autoAlpha: 0.72, filter: 'drop-shadow(0 0 46px rgba(255, 129, 38, 0.58))', scale: 1.01, duration: 0.72 },
+          'orbReveal+=0.12',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 0.9, duration: 0.78 },
+          'orbReveal',
+        )
+        .addLabel('finalComposition', 7)
+        .to(
+          '.signature-system',
+          { rotateX: 18, rotateY: -4, rotateZ: 5, scale: 0.98, xPercent: 2, yPercent: 0, duration: 0.9 },
+          'finalComposition',
+        )
+        .to(
+          '.hud-system',
+          { autoAlpha: 0.96, rotateX: 4, rotateY: 0, scale: 1.02, xPercent: 0, yPercent: -1, duration: 0.82 },
+          'finalComposition+=0.04',
+        )
+        .fromTo(
+          '.scene-cta',
+          { autoAlpha: 0, clipPath: 'inset(100% 0% 0% 0%)', yPercent: 22 },
+          { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 0%)', duration: 0.62, ease: 'power3.out', yPercent: 0 },
+          'finalComposition+=0.18',
+        )
+        .to(
+          '.scene-card',
+          { scale: 1.015, stagger: 0.04, z: 26, duration: 0.58 },
+          'finalComposition+=0.2',
+        )
+        .to(
+          '.scene-progress-fill',
+          { scaleX: 1, duration: 0.74 },
+          'finalComposition',
+        )
+        .addLabel('sceneExit', 8)
+        .to(
+          '.scene-exit-wash',
+          { autoAlpha: 0.74, clipPath: 'inset(0% 0% 0% 0%)', duration: 0.7 },
+          'sceneExit',
+        )
+        .to(
+          '.signature-system, .hud-system, .scene-cards',
+          { yPercent: -8, scale: 0.96, filter: 'blur(1.2px)', duration: 0.72 },
+          'sceneExit',
+        )
+        .to(
+          '.scene-light-streaks',
+          { autoAlpha: 0.42, xPercent: -14, duration: 0.72 },
+          'sceneExit',
+        )
+    }, scene)
+
+    if (import.meta.env.DEV) {
+      console.info('[HeroScene] active ScrollTriggers after creation:', ScrollTrigger.getAll().length)
+    }
+
+    return () => {
+      ctx.revert()
+
+      if (import.meta.env.DEV) {
+        console.info('[HeroScene] active ScrollTriggers after cleanup:', ScrollTrigger.getAll().length)
+      }
+    }
+  }, [])
+
+  return (
+    <section className="hero-scene" id="motion-scene" ref={sceneRef} aria-label="Experience cinematique PromptForge">
+      <div className="hero-viewport" ref={viewportRef}>
+        <div className="scene-layer scene-bg-violet" aria-hidden="true">
+          <img src={SCENE_ASSETS.backgroundViolet} alt="" />
+        </div>
+        <div className="scene-layer scene-bg-blue" aria-hidden="true">
+          <img src={SCENE_ASSETS.backgroundBlue} alt="" />
+        </div>
+        <div className="scene-layer scene-bg-warm" aria-hidden="true">
+          <img src={SCENE_ASSETS.backgroundWarm} alt="" />
+        </div>
+
+        <div className="scene-layer scene-light-streaks" aria-hidden="true">
+          <img src={SCENE_ASSETS.lightStreaksViolet} alt="" />
+        </div>
+        <div className="scene-layer scene-wireframe-asset" aria-hidden="true">
+          <img src={SCENE_ASSETS.wireframeViolet} alt="" />
+        </div>
+        <div className="scene-layer scene-grid" aria-hidden="true" />
+        <div className="scene-layer scene-atmosphere" aria-hidden="true" />
+        <div className="scene-layer scene-grain" aria-hidden="true" />
+        <div className="scene-layer scene-exit-wash" aria-hidden="true" />
+
+        <div className="signature-system" aria-hidden="true">
+          <span className="signature-halo" />
+          <span className="signature-shadow" />
+          <span className="signature-light-sweep" />
+          <img className="signature-object signature-object-violet" src={SCENE_ASSETS.objectViolet} alt="" />
+          <img className="signature-object signature-object-blue" src={SCENE_ASSETS.objectBlue} alt="" />
+          <img className="signature-object signature-object-amber" src={SCENE_ASSETS.objectAmber} alt="" />
+          <img className="signature-ring" src={SCENE_ASSETS.objectRing} alt="" />
+          <img className="signature-orb" src={SCENE_ASSETS.objectOrb} alt="" />
+        </div>
+
+        <div className="hud-system" aria-hidden="true">
+          <img className="hud-panel hud-panel-violet" src={SCENE_ASSETS.hudViolet} alt="" />
+          <img className="hud-panel hud-panel-blue" src={SCENE_ASSETS.hudBlue} alt="" />
+          <img className="hud-panel hud-panel-green" src={SCENE_ASSETS.hudGreen} alt="" />
+        </div>
+
+        <div className="scene-content">
+          <p className="scene-kicker">Launch system / 2026</p>
+          <div className="scene-title-mask">
+            <h1 className="scene-headline">Forge Impact.</h1>
+          </div>
+          <p className="scene-subtitle">Un objet signature. Une camera scroll. Une scene prete a produire.</p>
+        </div>
+
+        <div className="scene-cards" aria-label="Principes de production">
+          {sceneCards.map((card) => (
+            <article className="scene-card" key={card.title}>
+              <p>{card.eyebrow}</p>
+              <h2>{card.title}</h2>
+              <span>{card.body}</span>
+            </article>
+          ))}
+        </div>
+
+        <div className="scene-progress-rail" aria-hidden="true">
+          <span className="scene-progress-fill" />
+        </div>
+        <div className="scene-chapter-indicator" aria-hidden="true">
+          <span>ORBITAL BUILD</span>
+        </div>
+
+        <a className="scene-cta" href="#motion-scene" onClick={(event) => event.preventDefault()}>
+          Launch the system
         </a>
-        <a
-          className="topbar-link"
-          href="#sequence"
-          onClick={(event) => {
-            event.preventDefault()
-            scrollToTarget('#sequence')
-          }}
-        >
-          Voir le film
-        </a>
-      </header>
+      </div>
+    </section>
+  )
+}
 
-      <main>
-        <section className="hero-panel" aria-label="Hero PromptForge Cinematic">
-          <VideoBackground
-            src={VIDEOS.hero}
-            title="Video d introduction PromptForge"
-            onVideo={(node) => {
-              heroVideoRef.current = node
-            }}
-          />
-          <div className="cinema-vignette" />
-          <div className="letterbox" aria-hidden="true" />
-          <div className="film-grain" />
-
-          <div className="hero-layout">
-            <p className="hero-kicker">Un prompt ne suffit plus.</p>
-            <h1 className="hero-title">
-              Fabrique
-              <br />
-              la scene.
-            </h1>
-            <p className="hero-description">
-              Une experience scroll-driven en francais, construite comme une bande-annonce:
-              plans reels, ruptures, tension, puis prompt Codex pret a produire.
-            </p>
-            <div className="hero-actions">
-                <a
-                  className="primary-action"
-                  href="#sequence"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    scrollToTarget('#sequence')
-                  }}
-                >
-                  Lancer la sequence
-                  <Play size={17} aria-hidden="true" />
-                </a>
-                <a
-                  className="secondary-action"
-                  href="#final-cta"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    scrollToTarget('#forge-bridge', -40)
-                  }}
-                >
-                  Aller a la sortie
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </a>
-            </div>
-          </div>
-        </section>
-
-        <CinematicJourney chapters={journeyChapters} />
-
-        <section className="forge-bridge" id="forge-bridge" aria-label="Passage du trailer au build">
-          <VideoBackground src={VIDEOS.textureThree} title="Video de transition build PromptForge" preload="metadata" />
-          <div className="cinema-vignette" />
-          <div className="film-grain" />
-          <div className="forge-scan" aria-hidden="true" />
-          <div className="forge-bridge-layout">
-            <div className="forge-bridge-copy">
-              <p className="hero-kicker">Export du film vers Codex</p>
-              <h2 className="forge-bridge-title">
-                <span>La scene</span>
-                <span>devient</span>
-                <span>instruction.</span>
-              </h2>
-            </div>
-            <div className="forge-console" aria-label="Etat de production">
-              <div className="forge-console-head">
-                <span>PF_BUILD_PASS</span>
-                <span>READY</span>
-              </div>
-              <div className="forge-meter" aria-hidden="true">
-                <span className="forge-meter-fill" />
-              </div>
-              <ol className="forge-steps">
-                <li className="forge-step">
-                  <span>01</span>
-                  Direction visuelle verrouillee
-                </li>
-                <li className="forge-step">
-                  <span>02</span>
-                  Videos, rythme et transitions synchronises
-                </li>
-                <li className="forge-step">
-                  <span>03</span>
-                  Prompt Codex pret pour generation premium
-                </li>
-              </ol>
-              <a
-                className="primary-action forge-action"
-                href="#final-cta"
-                onClick={(event) => {
-                  event.preventDefault()
-                  scrollToTarget('#final-cta', -40)
-                }}
-              >
-                Lancer le build
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <section className="final-panel" id="final-cta" aria-label="Ouverture du studio">
-          <VideoBackground
-            src={VIDEOS.final}
-            title="Video finale PromptForge"
-            autoPlay={false}
-            preload="auto"
-            onVideo={(node) => {
-              finalVideoRef.current = node
-            }}
-          />
-          <div className="cinema-vignette" />
-          <div className="letterbox" aria-hidden="true" />
-          <div className="film-grain" />
-          <div className="final-layout">
-            <p className="hero-kicker">Fin du film. Debut du build.</p>
-            <h2>
-              Maintenant,
-              <br />
-              on forge.
-            </h2>
-            <a
-              className="primary-action"
-              href="#top"
-              onClick={(event) => {
-                event.preventDefault()
-                scrollToTarget('#top')
-              }}
-            >
-              Rejouer l experience
-              <ArrowUpRight size={17} aria-hidden="true" />
-            </a>
-          </div>
-        </section>
-      </main>
-    </div>
+function App() {
+  return (
+    <SmoothScrollProvider>
+      <div className="app-shell" id="top">
+        <TopBar />
+        <main>
+          <HeroScene />
+        </main>
+      </div>
+    </SmoothScrollProvider>
   )
 }
 
