@@ -103,9 +103,18 @@ function VideoBackground({ src, title, autoPlay = true, preload = 'metadata', on
 
 function App() {
   const appRef = useRef<HTMLDivElement | null>(null)
+  const lenisRef = useRef<Lenis | null>(null)
   const lenisRafRef = useRef<((time: number) => void) | null>(null)
   const heroVideoRef = useRef<HTMLVideoElement | null>(null)
   const finalVideoRef = useRef<HTMLVideoElement | null>(null)
+
+  const scrollToTarget = (target: string, offset = 0) => {
+    lenisRef.current?.scrollTo(target, {
+      offset,
+      duration: 1.15,
+      easing: (progress: number) => 1 - Math.pow(1 - progress, 3),
+    })
+  }
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
@@ -115,6 +124,8 @@ function App() {
       wheelMultiplier: 0.82,
       touchMultiplier: 1.05,
     })
+
+    lenisRef.current = lenis
 
     const lenisRaf = (time: number) => {
       lenis.raf(time * 1000)
@@ -174,6 +185,7 @@ function App() {
         gsap.ticker.remove(lenisRafRef.current)
       }
       lenis.destroy()
+      lenisRef.current = null
     }
   }, [])
 
@@ -214,14 +226,28 @@ function App() {
               plans reels, ruptures, tension, puis prompt Codex pret a produire.
             </p>
             <div className="hero-actions">
-              <a className="primary-action" href="#sequence">
-                Lancer la sequence
-                <Play size={17} aria-hidden="true" />
-              </a>
-              <a className="secondary-action" href="#final-cta">
-                Aller a la sortie
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </a>
+                <a
+                  className="primary-action"
+                  href="#sequence"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    scrollToTarget('#sequence')
+                  }}
+                >
+                  Lancer la sequence
+                  <Play size={17} aria-hidden="true" />
+                </a>
+                <a
+                  className="secondary-action"
+                  href="#final-cta"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    scrollToTarget('#final-cta', -90)
+                  }}
+                >
+                  Aller a la sortie
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </a>
             </div>
           </div>
         </section>
@@ -233,7 +259,7 @@ function App() {
             src={VIDEOS.final}
             title="Video finale PromptForge"
             autoPlay={false}
-            preload="none"
+            preload="auto"
             onVideo={(node) => {
               finalVideoRef.current = node
             }}
@@ -248,7 +274,14 @@ function App() {
               <br />
               on forge.
             </h2>
-            <a className="primary-action" href="#top">
+            <a
+              className="primary-action"
+              href="#top"
+              onClick={(event) => {
+                event.preventDefault()
+                scrollToTarget('#top')
+              }}
+            >
               Rejouer l experience
               <ArrowUpRight size={17} aria-hidden="true" />
             </a>

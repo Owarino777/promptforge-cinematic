@@ -305,7 +305,7 @@ video {
   opacity: 0;
   transform: scale(1.12);
   backface-visibility: hidden;
-  will-change: opacity, transform, clip-path;
+  will-change: opacity, transform;
 }
 
 .sequence-video-layer.is-active {
@@ -342,33 +342,65 @@ video {
   opacity: 0.72;
 }
 
-.scene-shutter {
+.scene-motion-layer {
   position: absolute;
   z-index: 8;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.scene-shutter {
   inset: 0;
   transform: scaleX(0);
   transform-origin: left center;
   background: var(--cream);
   mix-blend-mode: difference;
-  pointer-events: none;
 }
 
 .scene-curtain {
-  position: absolute;
-  z-index: 8;
-  inset: 0;
-  transform: scaleY(0);
-  transform-origin: top center;
-  background:
-    linear-gradient(90deg, transparent 0 8%, rgba(1, 1, 1, 0.94) 8% 12%, transparent 12% 18%),
-    linear-gradient(90deg, rgba(255, 242, 220, 0.9), rgba(217, 162, 74, 0.34), rgba(1, 1, 1, 0.88));
-  mix-blend-mode: difference;
-  pointer-events: none;
+  inset: -8% auto -8% -24%;
+  width: 44%;
+  transform: translate3d(0, 0, 0) skewX(-10deg);
+  background: linear-gradient(90deg, rgba(1, 1, 1, 0), rgba(255, 242, 220, 0.58), rgba(1, 1, 1, 0));
+}
+
+.scene-soft-wipe {
+  inset: -12% auto -12% -28%;
+  width: 38%;
+  transform: translate3d(0, 0, 0) skewX(-14deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 242, 220, 0.38), transparent);
+}
+
+.scene-flare {
+  inset: 0 auto 0 -20%;
+  width: 34%;
+  transform: translate3d(0, 0, 0) skewX(-12deg);
+  background: linear-gradient(90deg, transparent, rgba(217, 162, 74, 0.36), transparent);
+}
+
+.scene-band {
+  inset: -8% auto -8% -18%;
+  width: 46%;
+  transform: translate3d(0, 0, 0) skewX(-9deg);
+}
+
+.scene-band-left {
+  background: linear-gradient(90deg, rgba(1, 1, 1, 0), rgba(255, 242, 220, 0.56), rgba(1, 1, 1, 0));
+}
+
+.scene-band-right {
+  right: -18%;
+  left: auto;
+  background: linear-gradient(90deg, rgba(1, 1, 1, 0), rgba(217, 162, 74, 0.34), rgba(1, 1, 1, 0));
+}
+
+.scene-focus-frame {
+  inset: 14vh 16vw;
+  border: 1px solid rgba(255, 242, 220, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(217, 162, 74, 0.18);
 }
 
 .scene-iris-ring {
-  position: absolute;
-  z-index: 8;
   top: 50%;
   left: 50%;
   width: min(52vw, 38rem);
@@ -377,8 +409,6 @@ video {
   border-radius: 50%;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.3);
-  box-shadow: 0 0 0 18vw rgba(1, 1, 1, 0.34);
-  pointer-events: none;
 }
 
 .sequence-ui {
@@ -484,7 +514,7 @@ video {
 
 .sequence-spacer {
   position: relative;
-  height: 720vh;
+  height: 0;
 }
 
 .sequence-mobile {
@@ -525,6 +555,13 @@ video {
 .final-panel {
   display: grid;
   place-items: stretch;
+  margin-top: -1px;
+}
+
+.final-layout {
+  align-content: center;
+  padding-top: clamp(5rem, 8vw, 7rem);
+  padding-bottom: clamp(4rem, 8vh, 6rem);
 }
 
 .final-layout h2 {
