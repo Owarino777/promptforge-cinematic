@@ -107,13 +107,15 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
 
       gsap.set(videos, { opacity: 0, scale: 1.08, xPercent: 0, yPercent: 0, rotate: 0 })
       gsap.set(textures, { opacity: 0, scale: 1.04 })
-      gsap.set(copies, { opacity: 0, y: 56 })
+      gsap.set(copies, { opacity: 0, y: 56, x: 0, scale: 1 })
       gsap.set('.scene-motion-layer', { opacity: 0 })
       gsap.set('.scene-band-left', { xPercent: -135 })
       gsap.set('.scene-band-right', { xPercent: 135 })
       gsap.set('.scene-curtain', { xPercent: -120 })
       gsap.set('.scene-soft-wipe', { xPercent: -110 })
       gsap.set('.scene-focus-frame', { scale: 0.82, rotate: -2 })
+      gsap.set('.scene-codex-grid', { opacity: 0, yPercent: -16 })
+      gsap.set('.scene-impact-line', { opacity: 0, scaleX: 0 })
       gsap.set(progressRef.current, { scaleX: 0.08, transformOrigin: 'left center' })
       gsap.set(videos[0], { opacity: 1, scale: 1.02 })
       gsap.set(copies[0], { opacity: 1, y: 0 })
@@ -124,7 +126,7 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
         scrollTrigger: {
           trigger: sequenceRef.current,
           start: 'top top',
-          end: `+=${chapters.length * 1650}`,
+          end: `+=${chapters.length * 1850}`,
           pin: pinRef.current,
           scrub: 0.9,
           anticipatePin: 1,
@@ -134,21 +136,23 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
 
       const animateTransition = (chapter: JourneyChapter, index: number, label: string) => {
         if (chapter.transition === 'split') {
-          gsap.set(videos[index], { xPercent: 8, scale: 1.1 })
-          timeline.to(videos[index], { opacity: 1, xPercent: 0, scale: 1.02, duration: 1 }, label)
-          timeline.fromTo('.scene-band-left', { opacity: 0, xPercent: -135 }, { opacity: 0.72, xPercent: 150, duration: 0.84 }, label)
-          timeline.fromTo('.scene-band-right', { opacity: 0, xPercent: 135 }, { opacity: 0.5, xPercent: -145, duration: 0.9 }, `${label}+=0.08`)
+          gsap.set(videos[index], { xPercent: 18, scale: 1.16 })
+          timeline.to(videos[index], { opacity: 1, xPercent: 0, scale: 1.02, duration: 1.22, ease: 'power2.out' }, label)
+          timeline.fromTo('.scene-band-left', { opacity: 0, xPercent: -140 }, { opacity: 0.82, xPercent: 156, duration: 0.82 }, label)
+          timeline.fromTo('.scene-band-right', { opacity: 0, xPercent: 140 }, { opacity: 0.5, xPercent: -150, duration: 1.02 }, `${label}+=0.14`)
           timeline.fromTo('.scene-soft-wipe', { opacity: 0, xPercent: -110 }, { opacity: 0.26, xPercent: 120, duration: 0.9 }, label)
           timeline.to('.scene-band-left, .scene-band-right, .scene-soft-wipe', { opacity: 0, duration: 0.28 }, `${label}+=0.82`)
           return
         }
 
         if (chapter.transition === 'curtain') {
-          gsap.set(videos[index], { yPercent: 7, scale: 1.1 })
-          timeline.to(videos[index], { opacity: 1, yPercent: 0, scale: 1.02, duration: 1.04 }, label)
-          timeline.fromTo('.scene-curtain', { opacity: 0, xPercent: -120 }, { opacity: 0.32, xPercent: 255, duration: 0.98 }, label)
-          timeline.fromTo('.scene-flare', { opacity: 0, xPercent: -95 }, { opacity: 0.26, xPercent: 95, duration: 0.9 }, `${label}+=0.08`)
-          timeline.to('.scene-curtain, .scene-flare', { opacity: 0, duration: 0.28 }, `${label}+=0.82`)
+          gsap.set(videos[index], { yPercent: 16, scale: 1.18 })
+          timeline.to(videos[index], { opacity: 1, yPercent: 0, scale: 1.03, duration: 1.75, ease: 'power2.out' }, label)
+          timeline.fromTo('.scene-curtain', { opacity: 0, xPercent: -130 }, { opacity: 0.38, xPercent: 265, duration: 1.45 }, label)
+          timeline.fromTo('.scene-flare', { opacity: 0, xPercent: -95 }, { opacity: 0.28, xPercent: 95, duration: 1.25 }, `${label}+=0.22`)
+          timeline.fromTo('.scene-codex-grid', { opacity: 0, yPercent: -14 }, { opacity: 0.34, yPercent: 0, duration: 1.25 }, `${label}+=0.14`)
+          timeline.to(videos[index], { scale: 1.01, duration: 0.9, ease: 'none' }, `${label}+=1.45`)
+          timeline.to('.scene-curtain, .scene-flare, .scene-codex-grid', { opacity: 0, duration: 0.45 }, `${label}+=1.62`)
           return
         }
 
@@ -193,14 +197,47 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
           timeline.to('.scene-band-left', { opacity: 0, duration: 0.22 }, `${label}+=0.58`)
         }
 
-        timeline.to(copies[index], { opacity: 1, y: 0, duration: 0.72 }, `${label}+=0.14`)
+        const copy = copies[index]
+        const copySettings = [
+          { x: 0, y: 56, scale: 1, duration: 0.72, delay: 0.14 },
+          { x: -84, y: 0, scale: 1.08, duration: 0.44, delay: 0.03 },
+          { x: 92, y: 18, scale: 0.96, duration: 0.9, delay: 0.16 },
+          { x: 0, y: 130, scale: 0.92, duration: 1.35, delay: 0.34 },
+          { x: 0, y: 42, scale: 1.12, duration: 1.05, delay: 0.18 },
+        ][index] ?? { x: 0, y: 56, scale: 1, duration: 0.72, delay: 0.14 }
+
+        timeline.fromTo(
+          copy,
+          {
+            opacity: 0,
+            x: copySettings.x,
+            y: copySettings.y,
+            scale: copySettings.scale,
+          },
+          {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            scale: 1,
+            duration: copySettings.duration,
+            ease: index === 1 ? 'back.out(1.4)' : 'power3.out',
+          },
+          `${label}+=${copySettings.delay}`,
+        )
+
+        if (index === 1) {
+          timeline.fromTo('.scene-impact-line', { opacity: 0, scaleX: 0 }, { opacity: 0.7, scaleX: 1, duration: 0.32 }, `${label}+=0.02`)
+          timeline.to('.scene-impact-line', { opacity: 0, duration: 0.3 }, `${label}+=0.42`)
+        }
 
         if (index > 0) {
           const exitDirection = index % 2 === 0 ? -7 : 7
           const exitDelay = index === chapters.length - 1 ? 0.48 : 0.18
           const exitDuration = index === chapters.length - 1 ? 1.05 : 0.68
           timeline.to(videos[index - 1], { opacity: 0, scale: 1.06, xPercent: exitDirection, duration: exitDuration }, `${label}+=${exitDelay}`)
-          timeline.to(copies[index - 1], { opacity: 0, y: -46, duration: 0.48 }, `${label}+=0.08`)
+          const exitCopyY = index === 4 ? -96 : -46
+          const exitCopyDuration = index === 4 ? 0.86 : 0.48
+          timeline.to(copies[index - 1], { opacity: 0, y: exitCopyY, duration: exitCopyDuration }, `${label}+=0.08`)
         }
 
         timeline.to(
@@ -274,6 +311,8 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
           <div className="scene-motion-layer scene-band scene-band-right" />
           <div className="scene-motion-layer scene-focus-frame" />
           <div className="scene-motion-layer scene-iris-ring" />
+          <div className="scene-motion-layer scene-impact-line" />
+          <div className="scene-motion-layer scene-codex-grid" />
         </div>
 
         <div className="sequence-ui">
@@ -308,8 +347,8 @@ export default function CinematicJourney({ chapters }: CinematicJourneyProps) {
                 <h2>{chapter.title}</h2>
                 <p>{chapter.line}</p>
                 {chapter.id === 'release' && (
-                  <a className="primary-action" href="#final-cta">
-                    Voir la sortie
+                  <a className="primary-action" href="#forge-bridge">
+                    Assembler le build
                     <ArrowUpRight size={17} aria-hidden="true" />
                   </a>
                 )}

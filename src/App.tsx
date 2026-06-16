@@ -170,12 +170,69 @@ function App() {
 
       ScrollTrigger.create({
         trigger: '.final-panel',
-        start: 'top bottom',
+        start: 'top 120%',
         end: 'bottom top',
         onEnter: () => void finalVideoRef.current?.play().catch(() => undefined),
         onEnterBack: () => void finalVideoRef.current?.play().catch(() => undefined),
         onLeave: () => finalVideoRef.current?.pause(),
         onLeaveBack: () => finalVideoRef.current?.pause(),
+      })
+
+      gsap.fromTo(
+        '.forge-bridge-title span',
+        { yPercent: 115, opacity: 0 },
+        {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.95,
+          stagger: 0.08,
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: '.forge-bridge',
+            start: 'top 68%',
+            toggleActions: 'play none none reverse',
+          },
+        },
+      )
+
+      gsap.fromTo(
+        '.forge-step',
+        { x: -44, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.72,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: '.forge-bridge',
+            start: 'top 46%',
+            toggleActions: 'play none none reverse',
+          },
+        },
+      )
+
+      gsap.to('.forge-meter-fill', {
+        scaleX: 1,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.forge-bridge',
+          start: 'top 72%',
+          end: 'bottom 38%',
+          scrub: true,
+        },
+      })
+
+      gsap.to('.forge-bridge .video-media', {
+        scale: 1.1,
+        yPercent: 4,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.forge-bridge',
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true,
+        },
       })
     }, appRef)
 
@@ -196,7 +253,14 @@ function App() {
           <span>PromptForge</span>
           <span>Cinematic</span>
         </a>
-        <a className="topbar-link" href="#sequence">
+        <a
+          className="topbar-link"
+          href="#sequence"
+          onClick={(event) => {
+            event.preventDefault()
+            scrollToTarget('#sequence')
+          }}
+        >
           Voir le film
         </a>
       </header>
@@ -242,7 +306,7 @@ function App() {
                   href="#final-cta"
                   onClick={(event) => {
                     event.preventDefault()
-                    scrollToTarget('#final-cta', -90)
+                    scrollToTarget('#forge-bridge', -40)
                   }}
                 >
                   Aller a la sortie
@@ -253,6 +317,57 @@ function App() {
         </section>
 
         <CinematicJourney chapters={journeyChapters} />
+
+        <section className="forge-bridge" id="forge-bridge" aria-label="Passage du trailer au build">
+          <VideoBackground src={VIDEOS.textureThree} title="Video de transition build PromptForge" preload="metadata" />
+          <div className="cinema-vignette" />
+          <div className="film-grain" />
+          <div className="forge-scan" aria-hidden="true" />
+          <div className="forge-bridge-layout">
+            <div className="forge-bridge-copy">
+              <p className="hero-kicker">Export du film vers Codex</p>
+              <h2 className="forge-bridge-title">
+                <span>La scene</span>
+                <span>devient</span>
+                <span>instruction.</span>
+              </h2>
+            </div>
+            <div className="forge-console" aria-label="Etat de production">
+              <div className="forge-console-head">
+                <span>PF_BUILD_PASS</span>
+                <span>READY</span>
+              </div>
+              <div className="forge-meter" aria-hidden="true">
+                <span className="forge-meter-fill" />
+              </div>
+              <ol className="forge-steps">
+                <li className="forge-step">
+                  <span>01</span>
+                  Direction visuelle verrouillee
+                </li>
+                <li className="forge-step">
+                  <span>02</span>
+                  Videos, rythme et transitions synchronises
+                </li>
+                <li className="forge-step">
+                  <span>03</span>
+                  Prompt Codex pret pour generation premium
+                </li>
+              </ol>
+              <a
+                className="primary-action forge-action"
+                href="#final-cta"
+                onClick={(event) => {
+                  event.preventDefault()
+                  scrollToTarget('#final-cta', -40)
+                }}
+              >
+                Lancer le build
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </section>
 
         <section className="final-panel" id="final-cta" aria-label="Ouverture du studio">
           <VideoBackground
